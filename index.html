@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mama Papa TTT</title>
+    <style>
+        /* Theme Variables */
+        [data-theme="dark"] {
+            --bg-color: #0a0a0c;
+            --panel-bg: #141418;
+            --player-x: #00f2ff;
+            --player-o: #ff00e5;
+            --accent: #39ff14;
+            --text: #e0e0e0;
+            --border: #2a2a30;
+            --btn-toggle-bg: #222;
+            --shadow-x: 0 0 15px var(--player-x);
+            --shadow-o: 0 0 15px var(--player-o);
+            --h1-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+        }
+
+        [data-theme="light"] {
+            --bg-color: #f0f2f5;
+            --panel-bg: #ffffff;
+            --player-x: #0077ff;
+            --player-o: #d600bc;
+            --accent: #28a745;
+            --text: #1a1a1b;
+            --border: #d1d9e6;
+            --btn-toggle-bg: #e0e0e0;
+            --shadow-x: none;
+            --shadow-o: none;
+            --h1-shadow: none;
+        }
+
+        * { box-sizing: border-box; user-select: none; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            width: 100%;
+            position: relative;
+            max-width: 500px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            text-shadow: var(--h1-shadow);
+            flex-grow: 1;
+            text-align: center;
+        }
+
+        .theme-switch {
+            cursor: pointer;
+            background: var(--btn-toggle-bg);
+            padding: 8px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border);
+            width: 40px;
+            height: 40px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 10;
+        }
+
+        .status-bar {
+            margin: 10px 0;
+            font-weight: bold;
+            font-size: 1.1rem;
+            height: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+
+        .mode-toggle {
+            margin-bottom: 20px;
+            display: flex;
+            background: var(--btn-toggle-bg);
+            padding: 5px;
+            border-radius: 30px;
+            border: 1px solid var(--border);
+        }
+
+        .mode-btn {
+            padding: 8px 24px;
+            border-radius: 25px;
+            border: none;
+            background: transparent;
+            color: #666;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .mode-btn.active {
+            background: var(--player-x);
+            color: black;
+            box-shadow: 0 0 15px var(--player-x);
+        }
+
+        .game-container {
+            display: flex;
+            justify-content: center;
+            padding: 10px;
+            width: 100%;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 12px;
+            background-color: var(--border);
+            padding: 12px;
+            border-radius: 12px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+
+        .cell {
+            background-color: var(--panel-bg);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .cell:hover:not(.occupied) {
+            background-color: rgba(128, 128, 128, 0.1);
+        }
+
+        .mark-x { color: var(--player-x); text-shadow: var(--shadow-x); }
+        .mark-o { color: var(--player-o); text-shadow: var(--shadow-o); }
+
+        .traitor-hint {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 6px;
+            height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+            opacity: 0.6;
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .reboot-btn {
+            padding: 12px 32px;
+            background: transparent;
+            border: 1px solid var(--player-x);
+            color: var(--player-x);
+            cursor: pointer;
+            border-radius: 6px;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+        }
+
+        .reboot-btn:hover {
+            background: var(--player-x);
+            color: black;
+            box-shadow: 0 0 20px var(--player-x);
+        }
+
+        .credit-badge {
+            margin-top: 40px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #1a1a1e 0%, #141418 100%);
+            border: 1px solid #333;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            border-left: 4px solid var(--player-x);
+        }
+
+        [data-theme="light"] .credit-badge {
+            background: var(--panel-bg);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--player-x);
+        }
+
+        .credit-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: #888;
+            letter-spacing: 2px;
+        }
+
+        .credit-name {
+            font-size: 1rem;
+            font-weight: bold;
+            color: var(--player-x);
+            text-shadow: 0 0 8px rgba(0, 242, 255, 0.4);
+        }
+
+        [data-theme="light"] .credit-name {
+            text-shadow: none;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal-content {
+            background: var(--panel-bg);
+            padding: 40px;
+            border: 1px solid var(--player-x);
+            text-align: center;
+            border-radius: 12px;
+            box-shadow: 0 0 40px rgba(0, 242, 255, 0.2);
+            color: var(--text);
+        }
+
+        /* SVG Icons */
+        .icon { width: 20px; height: 20px; fill: var(--text); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Mama Papa TTT</h1>
+    </header>
+
+    <div id="statusBar" class="status-bar">Syncing...</div>
+
+    <div class="mode-toggle">
+        <button id="pvpBtn" class="mode-btn active">PVP</button>
+        <button id="pvcBtn" class="mode-btn">Robot</button>
+    </div>
+
+    <div class="game-container">
+        <div id="mainBoard" class="board"></div>
+    </div>
+
+    <div class="controls">
+        <button id="resetBtn" class="reboot-btn">Reboot System</button>
+    </div>
+
+    <div class="credit-badge">
+        <span class="credit-label">Created by</span>
+        <span class="credit-name">Ahyan Bin Ahsan</span>
+    </div>
+
+    <div class="theme-switch" id="themeToggle" title="Toggle Theme">
+        <svg class="icon" viewBox="0 0 24 24" id="themeIcon">
+            <path d="M12,18C15.31,18 18,15.31 18,12C18,8.69 15.31,6 12,6C8.69,6 6,8.69 6,12C6,15.31 8.69,18 12,18M12,20C7.58,20 4,16.42 4,12C4,7.58 7.58,4 12,4C16.42,4 20,7.58 20,12C20,16.42 16.42,20 12,20M12,22C17.52,22 22,17.52 22,12C22,6.48 17.52,2 12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22Z" />
+        </svg>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle" style="font-size: 2rem; margin-bottom: 20px;"></h2>
+            <button onclick="location.reload()" class="reboot-btn">Restart Game</button>
+        </div>
+    </div>
+
+    <script>
+        const model = {
+            board: Array(9).fill(null),
+            currentPlayer: 'X',
+            isRobot: false,
+            gameOver: false,
+            traitorIndex: Math.floor(Math.random() * 9),
+
+            reset() {
+                this.board = Array(9).fill(null);
+                this.currentPlayer = 'X';
+                this.gameOver = false;
+                this.traitorIndex = Math.floor(Math.random() * 9);
+            },
+
+            place(index) {
+                if (this.gameOver) return false;
+                if (this.board[index] !== null) return false;
+                this.board[index] = { 
+                    type: this.currentPlayer, 
+                    turns: 0, 
+                    isTraitor: (index === this.traitorIndex) 
+                };
+                return true;
+            },
+
+            processTurnEffects(boardState) {
+                const newBoard = boardState.map(piece => {
+                    if (piece) {
+                        const newPiece = {...piece};
+                        newPiece.turns++;
+                        if (newPiece.isTraitor && newPiece.turns === 3) {
+                            newPiece.type = newPiece.type === 'X' ? 'O' : 'X';
+                            newPiece.turns = 0; // Reset turns after betrayal
+                        }
+                        return newPiece;
+                    }
+                    return null;
+                });
+                return newBoard;
+            },
+
+            checkWinCondition(boardState) {
+                const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+                for (let [a,b,c] of lines) {
+                    if (boardState[a] && boardState[b] && boardState[c]) {
+                        if (boardState[a].type === boardState[b].type && boardState[a].type === boardState[c].type) {
+                            return boardState[a].type;
+                        }
+                    }
+                }
+                if (!boardState.some(cell => cell === null)) return 'Tie';
+                return null;
+            },
+
+            getBoardCopy() {
+                return this.board.map(piece => piece ? {...piece} : null);
+            }
+        };
+
+        const view = {
+            cells: [],
+            status: document.getElementById('statusBar'),
+            boardEl: document.getElementById('mainBoard'),
+            
+            init() {
+                this.boardEl.innerHTML = '';
+                this.cells = [];
+                for (let i = 0; i < 9; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.onclick = () => onCellClick(i);
+                    this.boardEl.appendChild(cell);
+                    this.cells.push(cell);
+                }
+            },
+
+            render() {
+                model.board.forEach((piece, i) => {
+                    this.cells[i].innerHTML = piece ? 
+                        `<span class="mark-${piece.type.toLowerCase()}">${piece.type}</span>` + 
+                        (piece.isTraitor ? '<div class="traitor-hint"></div>' : '') 
+                        : '';
+                    this.cells[i].classList.toggle('occupied', !!piece);
+                });
+                
+                if (model.gameOver) {
+                    this.status.innerText = "System Locked";
+                } else {
+                    const modeText = model.isRobot ? `(Robot)` : `(Player)`;
+                    this.status.innerText = `Turn: Player ${model.currentPlayer} ${modeText}`;
+                }
+                this.status.style.color = model.currentPlayer === 'X' ? 'var(--player-x)' : 'var(--player-o)';
+                
+                document.getElementById('pvpBtn').className = model.isRobot ? 'mode-btn' : 'mode-btn active';
+                document.getElementById('pvcBtn').className = model.isRobot ? 'mode-btn active' : 'mode-btn';
+            },
+
+            showResult(winner) {
+                const modal = document.getElementById('modal');
+                const title = document.getElementById('modalTitle');
+                modal.style.display = 'flex';
+                title.innerText = winner === 'Tie' ? "No One Wins" : `Player ${winner} Victorious`;
+            }
+        };
+
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const html = document.documentElement;
+
+        themeToggle.onclick = () => {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            
+            if (newTheme === 'light') {
+                themeIcon.innerHTML = '<path d="M12,3V4.5M12,19.5V21M21,12H19.5M4.5,12H3M18.36,5.64L17.31,6.69M6.69,17.31L5.64,18.36M18.36,18.36L17.31,17.31M6.69,6.69L5.64,5.64M12,7A5,5 0 0,0 7,12A5,5 0 0,0 12,17A5,5 0 0,0 17,12A5,5 0 0,0 12,7Z" />';
+            } else {
+                themeIcon.innerHTML = '<path d="M12,18C15.31,18 18,15.31 18,12C18,8.69 15.31,6 12,6C8.69,6 6,8.69 6,12C6,15.31 8.69,18 12,18M12,20C7.58,20 4,16.42 4,12C4,7.58 7.58,4 12,4C16.42,4 20,7.58 20,12C20,16.42 16.42,20 12,20M12,22C17.52,22 22,17.52 22,12C22,6.48 17.52,2 12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22Z" />';
+            }
+        };
+
+        function advanceGame() {
+            // Check for win BEFORE processing turn effects
+            let winner = model.checkWinCondition(model.board);
+            
+            if (winner) {
+                model.gameOver = true;
+                view.render();
+                setTimeout(() => view.showResult(winner), 400);
+                return true;
+            }
+            
+            // Process turn effects (traitor conversion)
+            model.board = model.processTurnEffects(model.board);
+            
+            // Check for win AFTER processing turn effects
+            winner = model.checkWinCondition(model.board);
+            
+            if (winner) {
+                model.gameOver = true;
+                view.render();
+                setTimeout(() => view.showResult(winner), 400);
+                return true;
+            }
+            
+            // Switch player if game is not over
+            model.currentPlayer = model.currentPlayer === 'X' ? 'O' : 'X';
+            view.render();
+            return false;
+        }
+
+        function onCellClick(index) {
+            if (model.gameOver) return;
+            if (model.isRobot && model.currentPlayer === 'O') return;
+
+            if (model.place(index)) {
+                const ended = advanceGame();
+                if (!ended && model.isRobot && model.currentPlayer === 'O') {
+                    setTimeout(robotMove, 600);
+                }
+            }
+        }
+
+        function simulateBoardAfterMove(board, index, player) {
+            // Create a deep copy of the board
+            const newBoard = board.map(piece => piece ? {...piece} : null);
+            
+            // Place the move
+            newBoard[index] = { 
+                type: player, 
+                turns: 0, 
+                isTraitor: (index === model.traitorIndex) 
+            };
+            
+            // Process turn effects for all pieces
+            return model.processTurnEffects(newBoard);
+        }
+
+        function minimax(board, depth, isMaximizing, alpha = -Infinity, beta = Infinity) {
+            const result = model.checkWinCondition(board);
+            
+            // Base cases
+            if (result === 'O') return 10 - depth;
+            if (result === 'X') return depth - 10;
+            if (result === 'Tie') return 0;
+            
+            if (depth > 6) return 0; // Depth limit for performance
+
+            if (isMaximizing) {
+                let bestScore = -Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (board[i] === null) {
+                        const simulatedBoard = simulateBoardAfterMove(board, i, 'O');
+                        let score = minimax(simulatedBoard, depth + 1, false, alpha, beta);
+                        bestScore = Math.max(score, bestScore);
+                        alpha = Math.max(alpha, bestScore);
+                        if (beta <= alpha) break;
+                    }
+                }
+                return bestScore;
+            } else {
+                let bestScore = Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (board[i] === null) {
+                        const simulatedBoard = simulateBoardAfterMove(board, i, 'X');
+                        let score = minimax(simulatedBoard, depth + 1, true, alpha, beta);
+                        bestScore = Math.min(score, bestScore);
+                        beta = Math.min(beta, bestScore);
+                        if (beta <= alpha) break;
+                    }
+                }
+                return bestScore;
+            }
+        }
+
+        function robotMove() {
+            if (model.gameOver || model.currentPlayer !== 'O') return;
+            
+            let bestScore = -Infinity;
+            let bestMoves = [];
+            
+            for (let i = 0; i < 9; i++) {
+                if (model.board[i] === null) {
+                    const simulatedBoard = simulateBoardAfterMove(model.getBoardCopy(), i, 'O');
+                    let score = minimax(simulatedBoard, 0, false);
+                    
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestMoves = [i];
+                    } else if (score === bestScore) {
+                        bestMoves.push(i);
+                    }
+                }
+            }
+            
+            if (bestMoves.length > 0) {
+                const randomMove = bestMoves[Math.floor(Math.random() * bestMoves.length)];
+                if (model.place(randomMove)) {
+                    advanceGame();
+                }
+            }
+        }
+
+        document.getElementById('pvpBtn').onclick = () => { 
+            model.isRobot = false; 
+            model.reset(); 
+            view.render(); 
+        };
+        
+        document.getElementById('pvcBtn').onclick = () => { 
+            model.isRobot = true; 
+            model.reset(); 
+            view.render(); 
+        };
+        
+        document.getElementById('resetBtn').onclick = () => { 
+            model.reset(); 
+            view.render(); 
+        };
+
+        view.init();
+        view.render();
+    </script>
+</body>
+</html>
